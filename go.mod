@@ -1,6 +1,6 @@
 module github.com/CrunchyData/pg_tileserv
 
-go 1.25.0
+go 1.26.2
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
