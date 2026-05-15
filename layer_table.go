@@ -12,7 +12,7 @@ import (
 
 	// Database
 	"github.com/CrunchyData/pg_tileserv/cql"
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	// Logging
 	log "github.com/sirupsen/logrus"
@@ -20,6 +20,13 @@ import (
 	// Configuration
 	"github.com/spf13/viper"
 )
+
+// TextArray was dropped from pgtype
+type TextArray struct {
+	Elements   []pgtype.Text
+	Dimensions []pgtype.ArrayDimension
+	Status     byte
+}
 
 // LayerTable provides metadata about the table layer
 type LayerTable struct {
@@ -315,10 +322,10 @@ func (lyr *LayerTable) GetBoundsExact() (Bounds, error) {
 	}
 
 	bounds.SRID = 4326
-	bounds.Xmin = xmin.Float
-	bounds.Ymin = ymin.Float
-	bounds.Xmax = xmax.Float
-	bounds.Ymax = ymax.Float
+	bounds.Xmin = xmin.Float64
+	bounds.Ymin = ymin.Float64
+	bounds.Xmax = xmax.Float64
+	bounds.Ymax = ymax.Float64
 	bounds.sanitize()
 	return bounds, nil
 }
@@ -358,7 +365,7 @@ func (lyr *LayerTable) GetBounds() (Bounds, error) {
 	}
 
 	// Failed to get estimate? Get the exact bounds.
-	if xmin.Status == pgtype.Null {
+	if !xmin.Valid {
 		warning := fmt.Sprintf("Estimated extent query failed, run 'ANALYZE %s.%s'", lyr.Schema, lyr.Table)
 		log.WithFields(log.Fields{
 			"event": "request",
@@ -369,10 +376,10 @@ func (lyr *LayerTable) GetBounds() (Bounds, error) {
 	}
 
 	bounds.SRID = 4326
-	bounds.Xmin = xmin.Float
-	bounds.Ymin = ymin.Float
-	bounds.Xmax = xmax.Float
-	bounds.Ymax = ymax.Float
+	bounds.Xmin = xmin.Float64
+	bounds.Ymin = ymin.Float64
+	bounds.Xmax = xmax.Float64
+	bounds.Ymax = ymax.Float64
 	bounds.sanitize()
 	return bounds, nil
 }
@@ -549,7 +556,7 @@ func getTableLayers() ([]LayerTable, error) {
 			id, schema, table, description, geometryColumn string
 			srid                                           int
 			geometryType, idColumn                         string
-			atts                                           pgtype.TextArray
+			atts                                           TextArray
 		)
 
 		err := rows.Scan(&id, &schema, &table, &description, &geometryColumn,
