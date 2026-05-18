@@ -21,13 +21,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// TextArray was dropped from pgtype
-type TextArray struct {
-	Elements   []pgtype.Text
-	Dimensions []pgtype.ArrayDimension
-	Status     byte
-}
-
 // LayerTable provides metadata about the table layer
 type LayerTable struct {
 	ID             string
@@ -556,7 +549,7 @@ func getTableLayers() ([]LayerTable, error) {
 			id, schema, table, description, geometryColumn string
 			srid                                           int
 			geometryType, idColumn                         string
-			atts                                           TextArray
+			atts                                           []pgtype.Text
 		)
 
 		err := rows.Scan(&id, &schema, &table, &description, &geometryColumn,
@@ -573,19 +566,19 @@ func getTableLayers() ([]LayerTable, error) {
 		// really, no fault of pgx
 		properties := make(map[string]TableProperty)
 
-		if atts.Status == pgtype.Present {
-			arrLen := atts.Dimensions[0].Length
-			arrStart := atts.Dimensions[0].LowerBound - 1
-			elmLen := atts.Dimensions[1].Length
+		if len(atts) > 0 {
+			elmLen := 4
+			arrLen := len(atts) / elmLen
+			arrStart := 0
 			for i := arrStart; i < arrLen; i++ {
 				pos := i * elmLen
-				elmID := atts.Elements[pos].String
+				elmID := atts[pos].String
 				elm := TableProperty{
 					Name:        elmID,
-					Type:        atts.Elements[pos+1].String,
-					Description: atts.Elements[pos+2].String,
+					Type:        atts[pos+1].String,
+					Description: atts[pos+2].String,
 				}
-				elm.order, _ = strconv.Atoi(atts.Elements[pos+3].String)
+				elm.order, _ = strconv.Atoi(atts[pos+3].String)
 				properties[elmID] = elm
 			}
 		}
