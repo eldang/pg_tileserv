@@ -549,7 +549,7 @@ func getTableLayers() ([]LayerTable, error) {
 			id, schema, table, description, geometryColumn string
 			srid                                           int
 			geometryType, idColumn                         string
-			atts                                           []pgtype.Text
+			atts                                           [][]pgtype.Text
 		)
 
 		err := rows.Scan(&id, &schema, &table, &description, &geometryColumn,
@@ -567,18 +567,16 @@ func getTableLayers() ([]LayerTable, error) {
 		properties := make(map[string]TableProperty)
 
 		if len(atts) > 0 {
-			elmLen := 4
-			arrLen := len(atts) / elmLen
+			arrLen := len(atts)
 			arrStart := 0
 			for i := arrStart; i < arrLen; i++ {
-				pos := i * elmLen
-				elmID := atts[pos].String
+				elmID := atts[i][0].String
 				elm := TableProperty{
 					Name:        elmID,
-					Type:        atts[pos+1].String,
-					Description: atts[pos+2].String,
+					Type:        atts[i][1].String,
+					Description: atts[i][2].String,
 				}
-				elm.order, _ = strconv.Atoi(atts[pos+3].String)
+				elm.order, _ = strconv.Atoi(atts[i][3].String)
 				properties[elmID] = elm
 			}
 		}
